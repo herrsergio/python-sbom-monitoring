@@ -5,14 +5,23 @@ A comprehensive tool for monitoring Python projects, generating Software Bill of
 ## Features
 
 ✅ **Auto-Discovery**: Finds all projects with `.venv` or `venv` directories
+
 ✅ **SBOM Generation**: Creates CycloneDX SBOMs for each project
+
 ✅ **Vulnerability Scanning**: Uses `pip-audit` to detect known CVEs
+
 ✅ **Change Tracking**: Detects new projects, removed projects, and new vulnerabilities
+
 ✅ **Historical Registry**: Maintains JSON registry of all dependencies over time
+
 ✅ **HTML Reports**: Beautiful visual reports of security status
+
 ✅ **Automated Scheduling**: Cron integration for daily/weekly scans
+
 ✅ **Multi-Channel Alerts**: Email, Slack, and custom webhooks
+
 ✅ **Lightweight**: Minimal dependencies, works with existing venvs
+
 
 ## Quick Start
 
@@ -24,9 +33,9 @@ git clone <repo> sbom-monitor
 cd sbom-monitor
 
 # Or manually download:
-# - sbom-monitor.py
+# - sbom
 # - setup-sbom-monitor.sh
-# - sbom-notifications.py
+# - sbom_notifications.py
 
 # Make setup script executable
 chmod +x setup-sbom-monitor.sh
@@ -65,12 +74,12 @@ cat ~/.sbom-monitor/vulnerabilities.json
 source ./venv-monitor/bin/activate
 
 # Run a full scan
-python sbom-monitor.py \
+python sbom \
   --projects ~/projects \
   --output ~/.sbom-monitor
 
 # Custom locations
-python sbom-monitor.py \
+python sbom \
   --projects /path/to/projects \
   --output /path/to/output
 ```
@@ -95,15 +104,15 @@ crontab -e
 ```bash
 # Create notification config template
 source ./venv-monitor/bin/activate
-python sbom-notifications.py \
+python sbom_notifications.py \
   --registry ~/.sbom-monitor/sbom-registry.json \
   --create-template
 
 # Edit the config
 nano ~/.sbom-monitor/notifications.json
 
-# Send notifications (run after sbom-monitor.py)
-python sbom-notifications.py \
+# Send notifications (run after sbom)
+python sbom_notifications.py \
   --config ~/.sbom-monitor/notifications.json \
   --registry ~/.sbom-monitor/sbom-registry.json
 ```
@@ -185,7 +194,7 @@ The tool expects projects like:
 
 ## Output Files
 
-After running `sbom-monitor.py`:
+After running `sbom`:
 
 ```
 ~/.sbom-monitor/
@@ -303,7 +312,7 @@ pip install --upgrade -r requirements.txt
 ### 1. Baseline First Run
 ```bash
 # Before making changes, establish a baseline
-python sbom-monitor.py --projects ~/projects --output ~/.sbom-monitor
+python sbom --projects ~/projects --output ~/.sbom-monitor
 ```
 
 ### 2. Schedule Regular Scans
@@ -330,7 +339,7 @@ pip show {package}
 pip install --upgrade {package}>=X.Y.Z
 
 # Re-scan
-python sbom-monitor.py --projects ~/projects --output ~/.sbom-monitor
+python sbom --projects ~/projects --output ~/.sbom-monitor
 ```
 
 ### 5. Keep Audit Trail
@@ -361,7 +370,7 @@ jobs:
           python-version: '3.11'
       - run: |
           pip install pip-audit cyclonedx-bom
-          python sbom-monitor.py --projects . --output ./sbom-reports
+          python sbom --projects . --output ./sbom-reports
       - uses: actions/upload-artifact@v3
         with:
           name: sbom-reports
@@ -372,7 +381,7 @@ jobs:
 
 ```bash
 # Convert SBOM to CycloneDX standard format (for risk management tools)
-python sbom-monitor.py --projects ~/projects --output ~/.sbom-monitor
+python sbom --projects ~/projects --output ~/.sbom-monitor
 
 # The sbom-registry.json can be imported into:
 # - Dependency-Track (open-source SBOM management)
@@ -403,7 +412,7 @@ for project, data in registry.items():
 For more verbose output, modify the script temporarily:
 
 ```python
-# In sbom-monitor.py, add:
+# In sbom, add:
 import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
@@ -429,7 +438,7 @@ done
 du -sh ~/.sbom-monitor/
 
 # Monitor resources during scan
-time python sbom-monitor.py ...
+time python sbom ...
 ```
 
 ## Performance Notes
