@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-"""
-SBOM Monitor Setup Script
-Installs dependencies, sets up configuration, and configures automated runs.
-"""
+#
+# SBOM Monitor Setup Script
+# Installs dependencies, sets up configuration, and configures automated runs.
 
 set -e
 
