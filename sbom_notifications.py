@@ -10,6 +10,8 @@ import json
 import logging
 import os
 import stat
+import subprocess
+import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -124,6 +126,36 @@ class NotificationManager:
             return False
         except Exception as e:
             logger.error("Failed to send webhook: %s", e)
+            return False
+
+    def send_macos_notification(self, title: str, message: str, subtitle: str = "") -> bool:
+        """Send a macOS notification via osascript (no external dependencies required)."""
+        if sys.platform != "darwin":
+            logger.debug("macOS notifications are only supported on macOS")
+            return False
+
+        config = self.config.get("macos", {})
+        sound = config.get("sound", "Basso")
+
+        script = f'display notification "{message}" with title "{title}"'
+        if subtitle:
+            script += f' subtitle "{subtitle}"'
+        if sound:
+            script += f' sound name "{sound}"'
+
+        try:
+            result = subprocess.run(
+                ["osascript", "-e", script],
+                capture_output=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                logger.info("macOS notification sent")
+                return True
+            logger.error("osascript error: %s", result.stderr.decode().strip())
+            return False
+        except Exception as e:
+            logger.error("Failed to send macOS notification: %s", e)
             return False
 
     @staticmethod
@@ -247,6 +279,10 @@ def create_config_template(output_file: Path):
             "enabled": False,
             "url": "https://your-webhook-endpoint.com/sbom-alerts",
             "secret": "optional-secret-key"
+        },
+        "macos": {
+            "enabled": False,
+            "sound": "Basso"
         }
     }
 
@@ -362,6 +398,15 @@ def main():
                 "removed_projects": changes["removed_projects"],
             }
             manager.send_webhook(webhook_url, payload)
+
+    if manager.config.get("macos", {}).get("enabled"):
+        vuln_count = sum(len(v) for v in changes["new_vulnerabilities"].values())
+        affected = ", ".join(sorted(changes["new_vulnerabilities"].keys()))
+        manager.send_macos_notification(
+            title="SBOM Monitor Alert",
+            message=f"{vuln_count} new vulnerability/vulnerabilities detected",
+            subtitle=affected,
+        )
 
     return 0
 

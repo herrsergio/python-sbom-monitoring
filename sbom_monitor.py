@@ -551,6 +551,16 @@ class SBOMMonitor:
                     }
                     manager.send_webhook(webhook_url, payload)
 
+            if manager.config.get("macos", {}).get("enabled"):
+                new_vulns = changes.get("new_vulnerabilities", {})
+                vuln_count = sum(len(v) for v in new_vulns.values())
+                affected = ", ".join(sorted(new_vulns.keys()))
+                manager.send_macos_notification(
+                    title="SBOM Monitor Alert",
+                    message=f"{vuln_count} new vulnerability/vulnerabilities detected",
+                    subtitle=affected,
+                )
+
         except ImportError:
             self.logger.error("Could not import sbom_notifications -- notifications not sent")
         except Exception as e:
