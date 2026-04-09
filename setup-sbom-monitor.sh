@@ -65,6 +65,37 @@ output_dir=$(eval echo "$output_dir")
 mkdir -p "$output_dir"
 echo "✓ Output directory configured: $output_dir"
 
+# Advanced options
+echo ""
+echo "Advanced Options"
+echo "================"
+read -p "Subprocess timeout in seconds (default: 30): " scan_timeout
+scan_timeout=${scan_timeout:-30}
+
+read -p "Parallel scan workers (default: 4): " scan_workers
+scan_workers=${scan_workers:-4}
+
+# Notifications setup
+echo ""
+echo "Notifications Setup (optional)"
+echo "=============================="
+read -p "Configure notifications? (y/n): " setup_notif
+notifications_config=""
+if [ "$setup_notif" = "y" ]; then
+    notifications_config="$output_dir/notifications.json"
+    source "$SCRIPT_DIR/venv-monitor/bin/activate"
+    python "$SCRIPT_PATH" --output "$output_dir" --projects "$projects_dir" 2>/dev/null || true
+    python -c "
+from pathlib import Path
+from sbom_notifications import create_config_template
+create_config_template(Path('$notifications_config'))
+" 2>/dev/null || python "$SCRIPT_DIR/sbom_notifications.py" --registry /dev/null --create-template --config "$notifications_config" 2>/dev/null || true
+    deactivate
+    echo ""
+    echo "  Edit $notifications_config to configure your channels"
+    echo "  Set 'enabled': true for each channel you want to use"
+fi
+
 # Create config file
 config_file="$SCRIPT_DIR/.sbom-monitor.conf"
 cat > "$config_file" << EOF
@@ -76,6 +107,9 @@ OUTPUT_DIR="$output_dir"
 SCRIPT_PATH="$SCRIPT_PATH"
 VENV_PATH="$SCRIPT_DIR/venv-monitor"
 SCRIPT_DIR="$SCRIPT_DIR"
+SCAN_TIMEOUT="$scan_timeout"
+SCAN_WORKERS="$scan_workers"
+NOTIFICATIONS_CONFIG="$notifications_config"
 EOF
 
 echo "✓ Configuration saved to $config_file"
@@ -103,7 +137,11 @@ if [ "$setup_cron" = "y" ]; then
 source "$(dirname "${BASH_SOURCE[0]}")/.sbom-monitor.conf"
 source "$VENV_PATH/bin/activate"
 cd "$SCRIPT_DIR"
-python "$SCRIPT_PATH" --projects "$PROJECTS_DIR" --output "$OUTPUT_DIR" >> "$OUTPUT_DIR/monitor.log" 2>&1
+NOTIF_ARG=""
+if [ -n "$NOTIFICATIONS_CONFIG" ] && [ -f "$NOTIFICATIONS_CONFIG" ]; then
+    NOTIF_ARG="--notifications-config $NOTIFICATIONS_CONFIG"
+fi
+python "$SCRIPT_PATH" --projects "$PROJECTS_DIR" --output "$OUTPUT_DIR" --timeout "$SCAN_TIMEOUT" --workers "$SCAN_WORKERS" $NOTIF_ARG >> "$OUTPUT_DIR/monitor.log" 2>&1
 WRAPPER_EOF
 
     chmod +x "$wrapper_script"
@@ -139,7 +177,7 @@ echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📚 Quick Start:"
-echo "  • Run manually:    source '$SCRIPT_DIR/venv-monitor/bin/activate' && python '$SCRIPT_PATH' --projects '$projects_dir' --output '$output_dir'"
+echo "  • Run manually:    source '$SCRIPT_DIR/venv-monitor/bin/activate' && python '$SCRIPT_PATH' --projects '$projects_dir' --output '$output_dir' --timeout $scan_timeout --workers $scan_workers"
 echo "  • View report:     open $output_dir/report.html"
 echo "  • Check registry:  cat $output_dir/sbom-registry.json"
 echo "  • View vulns:      cat $output_dir/vulnerabilities.json"
