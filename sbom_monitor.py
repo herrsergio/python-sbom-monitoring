@@ -32,10 +32,11 @@ def _setup_logging(output_dir: Path) -> logging.Logger:
 
     fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(fmt)
-    logger.addHandler(ch)
+    if sys.stdout.isatty():
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        ch.setFormatter(fmt)
+        logger.addHandler(ch)
 
     log_file = output_dir / "monitor.log"
     fh = logging.FileHandler(log_file)
