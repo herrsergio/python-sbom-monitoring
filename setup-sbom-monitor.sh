@@ -135,13 +135,13 @@ if [ "$setup_cron" = "y" ]; then
 #!/bin/bash
 # SBOM Monitor Cron Wrapper
 source "$(dirname "${BASH_SOURCE[0]}")/.sbom-monitor.conf"
-source "$VENV_PATH/bin/activate"
+PYTHON="$VENV_PATH/bin/python"
 cd "$SCRIPT_DIR"
 NOTIF_ARG=""
 if [ -n "$NOTIFICATIONS_CONFIG" ] && [ -f "$NOTIFICATIONS_CONFIG" ]; then
     NOTIF_ARG="--notifications-config $NOTIFICATIONS_CONFIG"
 fi
-python "$SCRIPT_PATH" --projects "$PROJECTS_DIR" --output "$OUTPUT_DIR" --timeout "$SCAN_TIMEOUT" --workers "$SCAN_WORKERS" $NOTIF_ARG >> "$OUTPUT_DIR/monitor.log" 2>&1
+"$PYTHON" "$SCRIPT_PATH" --projects "$PROJECTS_DIR" --output "$OUTPUT_DIR" --timeout "$SCAN_TIMEOUT" --workers "$SCAN_WORKERS" $NOTIF_ARG >> "$OUTPUT_DIR/monitor.log" 2>&1
 WRAPPER_EOF
 
     chmod +x "$wrapper_script"
