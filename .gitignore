@@ -1,2 +1,4 @@
 .sbom-monitor.conf
 venv-monitor
+__pycache__/
+run-sbom-monitor.sh
